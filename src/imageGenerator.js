@@ -39,22 +39,22 @@ function generateCountdownSVG(countdown, days, hours, minutes, seconds) {
         <text 
           x="${x}" 
           y="${valueY}" 
-          font-family="Arial, Helvetica, sans-serif" 
+          font-family="monospace, 'Courier New', Courier, monospace" 
           font-size="${fontSize}" 
           font-weight="bold" 
           fill="${textColor}" 
           text-anchor="middle" 
-          dominant-baseline="alphabetic"
+          dominant-baseline="middle"
         >${escapeSVG(formattedValue)}</text>
         <text 
           x="${x}" 
           y="${labelY}" 
-          font-family="Arial, Helvetica, sans-serif" 
+          font-family="monospace, 'Courier New', Courier, monospace" 
           font-size="${labelFontSize}" 
           font-weight="normal" 
           fill="${textColor}" 
           text-anchor="middle" 
-          dominant-baseline="alphabetic"
+          dominant-baseline="middle"
         >${escapeSVG(block.label)}</text>
       `;
     })
@@ -64,12 +64,12 @@ function generateCountdownSVG(countdown, days, hours, minutes, seconds) {
     ? `<text 
          x="${width / 2}" 
          y="40" 
-         font-family="Arial, sans-serif" 
+         font-family="monospace, 'Courier New', Courier, monospace" 
          font-size="28" 
          font-weight="bold" 
          fill="${textColor}" 
          text-anchor="middle" 
-         dominant-baseline="text-before-edge"
+         dominant-baseline="middle"
        >${escapeSVG(countdown.title.toUpperCase())}</text>`
     : "";
 
@@ -94,7 +94,7 @@ function generateExpiredSVG(countdown) {
     ? `<text 
          x="${width / 2}" 
          y="150" 
-         font-family="Arial, sans-serif" 
+         font-family="monospace, 'Courier New', Courier, monospace" 
          font-size="28" 
          font-weight="bold" 
          fill="${textColor}" 
@@ -110,7 +110,7 @@ function generateExpiredSVG(countdown) {
   <text 
     x="${width / 2}" 
     y="${height / 2}" 
-    font-family="Arial, sans-serif" 
+    font-family="monospace, 'Courier New', Courier, monospace" 
     font-size="64" 
     font-weight="bold" 
     fill="${textColor}" 
@@ -153,14 +153,23 @@ export async function createCountdownImage(countdown) {
   const seconds = differenceInSeconds(remainingAfterMinutes, now);
 
   const svg = generateCountdownSVG(countdown, days, hours, minutes, seconds);
-  const pngBuffer = await sharp(Buffer.from(svg, "utf-8")).png().toBuffer();
+  
+  // Utiliser sharp pour convertir SVG en PNG
+  // Note: Sharp utilise librsvg qui nécessite des polices système
+  const pngBuffer = await sharp(Buffer.from(svg, "utf-8"))
+    .png()
+    .toBuffer();
 
   return pngBuffer;
 }
 
 async function createExpiredImage(countdown) {
   const svg = generateExpiredSVG(countdown);
-  const pngBuffer = await sharp(Buffer.from(svg, "utf-8")).png().toBuffer();
+  
+  // Utiliser sharp pour convertir SVG en PNG
+  const pngBuffer = await sharp(Buffer.from(svg, "utf-8"))
+    .png()
+    .toBuffer();
 
   return pngBuffer;
 }
