@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CountdownMail - Créateur de comptes à rebours pour emails</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-content">
+          <div class="header-icon">
+            <i data-lucide="timer"></i>
+          </div>
+          <div>
+            <h1>CountdownMail</h1>
+            <p>Créez des comptes à rebours dynamiques pour vos emails</p>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="create-section">
+          <div class="section-header">
+            <i data-lucide="plus-circle"></i>
+            <h2>Créer un nouveau compte à rebours</h2>
+          </div>
+          <form id="countdownForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="title">
+                  <i data-lucide="type"></i>
+                  <span>Titre (optionnel)</span>
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  placeholder="Ex: Promotion se termine dans..."
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="targetDate">
+                  <i data-lucide="calendar"></i>
+                  <span
+                    >Date et heure cible <span class="required">*</span></span
+                  >
+                </label>
+                <input type="datetime-local" id="targetDate" required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="backgroundColor">
+                  <i data-lucide="palette"></i>
+                  <span>Couleur de fond</span>
+                </label>
+                <div class="color-input-wrapper">
+                  <input type="color" id="backgroundColor" value="#ffffff" />
+                  <input
+                    type="text"
+                    id="backgroundColorText"
+                    value="#ffffff"
+                    readonly
+                  />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="textColor">
+                  <i data-lucide="paintbrush"></i>
+                  <span>Couleur du texte</span>
+                </label>
+                <div class="color-input-wrapper">
+                  <input type="color" id="textColor" value="#000000" />
+                  <input
+                    type="text"
+                    id="textColorText"
+                    value="#000000"
+                    readonly
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="fontSize">
+                <i data-lucide="type"></i>
+                <span
+                  >Taille de police: <span id="fontSizeValue">48px</span></span
+                >
+              </label>
+              <div class="slider-wrapper">
+                <input
+                  type="range"
+                  id="fontSize"
+                  min="24"
+                  max="72"
+                  value="48"
+                />
+                <div class="slider-labels">
+                  <span>24px</span>
+                  <span>72px</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="check-circle"></i>
+              <span>Créer le compte à rebours</span>
+            </button>
+          </form>
+        </section>
+
+        <section class="countdowns-section">
+          <div class="section-header">
+            <i data-lucide="list"></i>
+            <h2>Mes comptes à rebours</h2>
+          </div>
+          <div id="countdownsList" class="countdowns-grid">
+            <div class="empty-state">
+              <i data-lucide="clock"></i>
+              <p>Aucun compte à rebours créé pour le moment</p>
+              <span>Créez votre premier compte à rebours ci-dessus</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>
+            <i data-lucide="code"></i>
+            <span>Code d'intégration</span>
+          </h2>
+          <button class="close-btn" onclick="closeModal()">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">
+            Utilisez cette image dans vos emails Brevo :
+          </p>
+
+          <div class="integration-code">
+            <div class="code-header">
+              <label>
+                <i data-lucide="link"></i>
+                <span>URL de l'image (mise à jour automatiquement)</span>
+              </label>
+              <button
+                class="btn btn-icon"
+                onclick="copyToClipboard('imageUrl', event)"
+              >
+                <i data-lucide="copy"></i>
+                <span>Copier</span>
+              </button>
+            </div>
+            <textarea id="imageUrl" readonly></textarea>
+          </div>
+
+          <div class="integration-code">
+            <div class="code-header">
+              <label>
+                <i data-lucide="code-2"></i>
+                <span>Code HTML pour email</span>
+              </label>
+              <button
+                class="btn btn-icon"
+                onclick="copyToClipboard('htmlCode', event)"
+              >
+                <i data-lucide="copy"></i>
+                <span>Copier</span>
+              </button>
+            </div>
+            <textarea id="htmlCode" readonly></textarea>
+          </div>
+
+          <div class="preview">
+            <label>
+              <i data-lucide="eye"></i>
+              <span>Aperçu</span>
+            </label>
+            <div class="preview-container">
+              <img id="previewImage" src="" alt="Aperçu du compte à rebours" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+      // Initialiser les icônes Lucide
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
