@@ -128,6 +128,17 @@ app.get("/api/countdowns/:id/image", async (req, res) => {
   }
 });
 
+// Gestion des routes non trouvées (404) - doit être après toutes les routes
+app.use((req, res) => {
+  res.status(404).json({ error: "Route non trouvée" });
+});
+
+// Gestion des erreurs serveur (500)
+app.use((err, req, res, next) => {
+  console.error("Erreur serveur:", err);
+  res.status(500).json({ error: "Erreur serveur interne" });
+});
+
 app
   .listen(PORT, () => {
     console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);

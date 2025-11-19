@@ -2,6 +2,26 @@ const API_BASE = window.location.origin;
 
 let countdowns = [];
 
+// Fonction helper pour parser les réponses JSON de manière sécurisée
+async function parseJSONResponse(response) {
+  const contentType = response.headers.get("content-type");
+  
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(
+      text.includes("<!DOCTYPE") || text.includes("<html")
+        ? "Erreur serveur: réponde non-JSON reçue"
+        : text || `Erreur ${response.status}: ${response.statusText}`
+    );
+  }
+  
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new Error(`Erreur de parsing JSON: ${error.message}`);
+  }
+}
+
 // Initialisation
 document.addEventListener("DOMContentLoaded", () => {
   loadCountdowns();
@@ -91,11 +111,11 @@ async function createCountdown() {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await parseJSONResponse(response);
       throw new Error(error.error || "Erreur lors de la création");
     }
 
-    const countdown = await response.json();
+    const countdown = await parseJSONResponse(response);
     document.getElementById("countdownForm").reset();
     document.getElementById("backgroundColorText").value = "#FFFFFF";
     document.getElementById("textColorText").value = "#000000";
@@ -113,9 +133,12 @@ async function createCountdown() {
 async function loadCountdowns() {
   try {
     const response = await fetch(`${API_BASE}/api/countdowns`);
-    if (!response.ok) throw new Error("Erreur lors du chargement");
-
-    countdowns = await response.json();
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`Erreur ${response.status}: ${errorText}`);
+    }
+    
+    countdowns = await parseJSONResponse(response);
     displayCountdowns();
   } catch (error) {
     console.error("Erreur:", error);
