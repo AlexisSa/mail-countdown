@@ -1,116 +1,141 @@
-import { createCanvas, registerFont } from "canvas";
+import sharp from "sharp";
 import {
   differenceInDays,
   differenceInHours,
   differenceInMinutes,
   differenceInSeconds,
 } from "date-fns";
-import { existsSync, mkdirSync, createWriteStream, unlink } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
-import https from "https";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Générer un SVG pour le compte à rebours
+function generateCountdownSVG(countdown, days, hours, minutes, seconds) {
+  const textColor = countdown.style.textColor || "#000000";
+  const bgColor = countdown.style.backgroundColor || "#ffffff";
+  const hasTitle = countdown.title && countdown.title.trim() !== "";
+  const fontSize = Math.max(64, Math.min(countdown.style.fontSize || 72, 96));
+  const labelFontSize = 16;
 
-// Télécharger une police depuis GitHub
-async function downloadFont(url, fontPath) {
-  return new Promise((resolve) => {
-    const file = createWriteStream(fontPath);
-    https
-      .get(url, (response) => {
-        if (response.statusCode === 200) {
-          response.pipe(file);
-          file.on("finish", () => {
-            file.close();
-            resolve(true);
-          });
-        } else {
-          file.close();
-          unlink(fontPath, () => {});
-          resolve(false);
-        }
-      })
-      .on("error", (err) => {
-        file.close();
-        unlink(fontPath, () => {});
-        resolve(false);
-      });
-  });
+  const width = 1000;
+  const height = 400;
+  const topOffset = hasTitle ? 100 : 0;
+  const blockSpacing = 50;
+  const blockWidth = (width - blockSpacing * 3) / 4;
+  const centerY = topOffset + (height - topOffset) / 2;
+
+  const countdownBlocks = [
+    { value: days, label: "DAYS" },
+    { value: hours, label: "HRS" },
+    { value: minutes, label: "MIN" },
+    { value: seconds, label: "SEC" },
+  ];
+
+  const blocksHTML = countdownBlocks
+    .map((block, index) => {
+      const x = (blockWidth + blockSpacing) * index + blockWidth / 2;
+      const formattedValue = String(block.value).padStart(2, "0");
+      const valueY = centerY - 30;
+      const labelY = valueY + fontSize + 20;
+
+      return `
+        <text 
+          x="${x}" 
+          y="${valueY}" 
+          font-family="Arial, sans-serif" 
+          font-size="${fontSize}" 
+          font-weight="bold" 
+          fill="${textColor}" 
+          text-anchor="middle" 
+          dominant-baseline="alphabetic"
+        >${formattedValue}</text>
+        <text 
+          x="${x}" 
+          y="${labelY}" 
+          font-family="Arial, sans-serif" 
+          font-size="${labelFontSize}" 
+          font-weight="normal" 
+          fill="${textColor}" 
+          text-anchor="middle" 
+          dominant-baseline="alphabetic"
+        >${block.label}</text>
+      `;
+    })
+    .join("");
+
+  const titleHTML = hasTitle
+    ? `<text 
+         x="${width / 2}" 
+         y="40" 
+         font-family="Arial, sans-serif" 
+         font-size="28" 
+         font-weight="bold" 
+         fill="${textColor}" 
+         text-anchor="middle" 
+         dominant-baseline="text-before-edge"
+       >${escapeSVG(countdown.title.toUpperCase())}</text>`
+    : "";
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${width}" height="${height}" fill="${bgColor}"/>
+  ${titleHTML}
+  ${blocksHTML}
+</svg>`;
 }
 
-// Charger la police Poppins depuis Google Fonts ou utiliser la police système
-async function loadPoppinsFont() {
-  try {
-    const fontsDir = join(__dirname, "..", "fonts");
-    const boldPath = join(fontsDir, "Poppins-Bold.ttf");
-    const mediumPath = join(fontsDir, "Poppins-Medium.ttf");
-    const regularPath = join(fontsDir, "Poppins-Regular.ttf");
+// Générer un SVG pour l'image expirée
+function generateExpiredSVG(countdown) {
+  const textColor = countdown.style.textColor || "#000000";
+  const bgColor = countdown.style.backgroundColor || "#ffffff";
+  const hasTitle = countdown.title && countdown.title.trim() !== "";
 
-    // Créer le dossier fonts s'il n'existe pas
-    if (!existsSync(fontsDir)) {
-      mkdirSync(fontsDir, { recursive: true });
-    }
+  const width = 1000;
+  const height = 400;
 
-    // Charger Poppins Bold
-    if (!existsSync(boldPath)) {
-      const downloaded = await downloadFont(
-        "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Bold.ttf",
-        boldPath
-      );
-      if (!downloaded) {
-        console.warn("Impossible de télécharger Poppins Bold");
-      }
-    }
-    if (existsSync(boldPath)) {
-      registerFont(boldPath, { family: "Poppins", weight: "bold" });
-    }
+  const titleHTML = hasTitle
+    ? `<text 
+         x="${width / 2}" 
+         y="150" 
+         font-family="Arial, sans-serif" 
+         font-size="28" 
+         font-weight="bold" 
+         fill="${textColor}" 
+         text-anchor="middle" 
+         dominant-baseline="middle"
+       >${escapeSVG(countdown.title.toUpperCase())}</text>`
+    : "";
 
-    // Charger Poppins Medium
-    if (!existsSync(mediumPath)) {
-      const downloaded = await downloadFont(
-        "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Medium.ttf",
-        mediumPath
-      );
-      if (!downloaded) {
-        console.warn("Impossible de télécharger Poppins Medium");
-      }
-    }
-    if (existsSync(mediumPath)) {
-      registerFont(mediumPath, { family: "Poppins", weight: "500" });
-    }
-
-    // Charger Poppins Regular
-    if (!existsSync(regularPath)) {
-      const downloaded = await downloadFont(
-        "https://raw.githubusercontent.com/google/fonts/main/ofl/poppins/Poppins-Regular.ttf",
-        regularPath
-      );
-      if (!downloaded) {
-        console.warn("Impossible de télécharger Poppins Regular");
-      }
-    }
-    if (existsSync(regularPath)) {
-      registerFont(regularPath, { family: "Poppins", weight: "normal" });
-    }
-  } catch (error) {
-    console.warn(
-      "Impossible de charger Poppins, utilisation de la police système"
-    );
-  }
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${width}" height="${height}" fill="${bgColor}"/>
+  ${titleHTML}
+  <text 
+    x="${width / 2}" 
+    y="${height / 2}" 
+    font-family="Arial, sans-serif" 
+    font-size="64" 
+    font-weight="bold" 
+    fill="${textColor}" 
+    text-anchor="middle" 
+    dominant-baseline="middle"
+  >TERMINÉ</text>
+</svg>`;
 }
 
-// Initialiser la police au chargement du module (non bloquant)
-loadPoppinsFont().catch((err) => {
-  console.warn("Erreur lors du chargement des polices:", err.message);
-});
+// Échapper les caractères spéciaux pour SVG
+function escapeSVG(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export async function createCountdownImage(countdown) {
   const now = new Date();
   const target = new Date(countdown.targetDate);
 
   if (target <= now) {
-    return createExpiredImage(countdown);
+    return await createExpiredImage(countdown);
   }
 
   const days = differenceInDays(target, now);
@@ -127,91 +152,19 @@ export async function createCountdownImage(countdown) {
   );
   const seconds = differenceInSeconds(remainingAfterMinutes, now);
 
-  const canvas = createCanvas(1000, 400);
-  const ctx = canvas.getContext("2d");
+  const svg = generateCountdownSVG(countdown, days, hours, minutes, seconds);
+  const pngBuffer = await sharp(Buffer.from(svg))
+    .png()
+    .toBuffer();
 
-  // Fond
-  ctx.fillStyle = countdown.style.backgroundColor || "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const textColor = countdown.style.textColor || "#000000";
-  const hasTitle = countdown.title && countdown.title.trim() !== "";
-
-  // Titre en haut (optionnel)
-  let topOffset = 0;
-  if (hasTitle) {
-    ctx.fillStyle = textColor;
-    ctx.font = `bold 28px Poppins, Arial, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillText(countdown.title.toUpperCase(), canvas.width / 2, 40);
-    topOffset = 100;
-  }
-
-  // Configuration des blocs
-  const fontSize = Math.max(64, Math.min(countdown.style.fontSize || 72, 96));
-  const labelFontSize = 16;
-  const blockSpacing = 50;
-  const blockWidth = (canvas.width - blockSpacing * 3) / 4; // 4 blocs avec 3 espacements
-
-  const countdownBlocks = [
-    { value: days, label: "DAYS" },
-    { value: hours, label: "HRS" },
-    { value: minutes, label: "MIN" },
-    { value: seconds, label: "SEC" },
-  ];
-
-  // Position verticale du centre des blocs
-  const centerY = topOffset + (canvas.height - topOffset) / 2;
-
-  // Dessiner chaque bloc
-  countdownBlocks.forEach((block, index) => {
-    const x = (blockWidth + blockSpacing) * index + blockWidth / 2;
-
-    // Valeur numérique en grand
-    ctx.fillStyle = textColor;
-    ctx.font = `bold ${fontSize}px Poppins, Arial, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "alphabetic";
-
-    // Formater la valeur avec zéro devant si nécessaire
-    const formattedValue = String(block.value).padStart(2, "0");
-    const valueY = centerY - 30;
-    ctx.fillText(formattedValue, x, valueY);
-
-    // Label en dessous
-    ctx.font = `500 ${labelFontSize}px Poppins, Arial, sans-serif`;
-    ctx.textBaseline = "alphabetic";
-    const labelY = valueY + fontSize + 20;
-    ctx.fillText(block.label, x, labelY);
-  });
-
-  return canvas.toBuffer("image/png");
+  return pngBuffer;
 }
 
-function createExpiredImage(countdown) {
-  const canvas = createCanvas(1000, 400);
-  const ctx = canvas.getContext("2d");
+async function createExpiredImage(countdown) {
+  const svg = generateExpiredSVG(countdown);
+  const pngBuffer = await sharp(Buffer.from(svg))
+    .png()
+    .toBuffer();
 
-  ctx.fillStyle = countdown.style.backgroundColor || "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const textColor = countdown.style.textColor || "#000000";
-
-  // Titre si présent
-  if (countdown.title && countdown.title.trim() !== "") {
-    ctx.fillStyle = textColor;
-    ctx.font = `bold 28px Poppins, Arial, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(countdown.title.toUpperCase(), canvas.width / 2, 150);
-  }
-
-  // Message "Terminé"
-  ctx.font = `bold 64px Poppins, Arial, sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("TERMINÉ", canvas.width / 2, canvas.height / 2);
-
-  return canvas.toBuffer("image/png");
+  return pngBuffer;
 }

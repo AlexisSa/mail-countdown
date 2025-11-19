@@ -12,15 +12,9 @@ Système de création de comptes à rebours pour intégration dans vos emails.
 
 ## 🚀 Installation
 
-### Prérequis (macOS)
-
-Sur macOS, `canvas` nécessite des dépendances système. Installez-les avec Homebrew :
-
-```bash
-brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman
-```
-
 ### Installation des dépendances Node.js
+
+> **Note** : L'application utilise `sharp` pour générer les images, qui fonctionne sur tous les environnements (y compris Vercel) sans dépendances système supplémentaires.
 
 1. **Installer les dépendances** :
 
