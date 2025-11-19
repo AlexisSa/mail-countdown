@@ -139,19 +139,25 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Erreur serveur interne" });
 });
 
-app
-  .listen(PORT, () => {
-    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-  })
-  .on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-      console.error(`❌ Erreur: Le port ${PORT} est déjà utilisé.`);
-      console.error(
-        `💡 Solution: Arrêtez le processus avec: lsof -ti:${PORT} | xargs kill -9`
-      );
-      process.exit(1);
-    } else {
-      console.error("❌ Erreur lors du démarrage du serveur:", err);
-      process.exit(1);
-    }
-  });
+// Export de l'app pour Vercel (serverless)
+export default app;
+
+// Démarrage du serveur uniquement en local (pas sur Vercel)
+if (process.env.VERCEL !== "1") {
+  app
+    .listen(PORT, () => {
+      console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+    })
+    .on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`❌ Erreur: Le port ${PORT} est déjà utilisé.`);
+        console.error(
+          `💡 Solution: Arrêtez le processus avec: lsof -ti:${PORT} | xargs kill -9`
+        );
+        process.exit(1);
+      } else {
+        console.error("❌ Erreur lors du démarrage du serveur:", err);
+        process.exit(1);
+      }
+    });
+}

@@ -5,7 +5,11 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DATA_FILE = join(__dirname, "..", "data", "countdowns.json");
+// Sur Vercel, utiliser /tmp car le système de fichiers est en lecture seule
+// En local, utiliser le dossier data
+const isVercel = process.env.VERCEL === "1";
+const DATA_DIR = isVercel ? "/tmp" : join(__dirname, "..", "data");
+const DATA_FILE = join(DATA_DIR, "countdowns.json");
 
 export class CountdownStore {
   constructor() {
@@ -29,9 +33,9 @@ export class CountdownStore {
 
   save() {
     try {
-      const dir = dirname(DATA_FILE);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
+      // Sur Vercel, /tmp existe toujours, pas besoin de créer le dossier
+      if (!isVercel && !existsSync(DATA_DIR)) {
+        mkdirSync(DATA_DIR, { recursive: true });
       }
       writeFileSync(DATA_FILE, JSON.stringify(this.countdowns, null, 2), "utf-8");
     } catch (error) {
