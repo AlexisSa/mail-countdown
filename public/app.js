@@ -45,6 +45,27 @@ function setupForm() {
     e.preventDefault();
     await createCountdown();
   });
+
+  // Configuration du formulaire d'édition
+  const editForm = document.getElementById("editCountdownForm");
+  const editFontSizeSlider = document.getElementById("editFontSize");
+  const editFontSizeValue = document.getElementById("editFontSizeValue");
+
+  if (editFontSizeSlider) {
+    editFontSizeSlider.addEventListener("input", (e) => {
+      editFontSizeValue.textContent = `${e.target.value}px`;
+    });
+  }
+
+  if (editForm) {
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await updateCountdown();
+    });
+  }
+
+  // Configuration des inputs de couleur pour l'édition
+  setupEditColorInputs();
 }
 
 // Configuration des inputs de couleur
@@ -54,23 +75,55 @@ function setupColorInputs() {
   const textColor = document.getElementById("textColor");
   const textColorText = document.getElementById("textColorText");
 
-  // Synchroniser couleur de fond
-  backgroundColor.addEventListener("input", (e) => {
-    backgroundColorText.value = e.target.value.toUpperCase();
-  });
+  if (backgroundColor && backgroundColorText) {
+    // Synchroniser couleur de fond
+    backgroundColor.addEventListener("input", (e) => {
+      backgroundColorText.value = e.target.value.toUpperCase();
+    });
 
-  backgroundColorText.addEventListener("click", () => {
-    backgroundColor.click();
-  });
+    backgroundColorText.addEventListener("click", () => {
+      backgroundColor.click();
+    });
+  }
 
-  // Synchroniser couleur de texte
-  textColor.addEventListener("input", (e) => {
-    textColorText.value = e.target.value.toUpperCase();
-  });
+  if (textColor && textColorText) {
+    // Synchroniser couleur de texte
+    textColor.addEventListener("input", (e) => {
+      textColorText.value = e.target.value.toUpperCase();
+    });
 
-  textColorText.addEventListener("click", () => {
-    textColor.click();
-  });
+    textColorText.addEventListener("click", () => {
+      textColor.click();
+    });
+  }
+}
+
+// Configuration des inputs de couleur pour l'édition
+function setupEditColorInputs() {
+  const backgroundColor = document.getElementById("editBackgroundColor");
+  const backgroundColorText = document.getElementById("editBackgroundColorText");
+  const textColor = document.getElementById("editTextColor");
+  const textColorText = document.getElementById("editTextColorText");
+
+  if (backgroundColor && backgroundColorText) {
+    backgroundColor.addEventListener("input", (e) => {
+      backgroundColorText.value = e.target.value.toUpperCase();
+    });
+
+    backgroundColorText.addEventListener("click", () => {
+      backgroundColor.click();
+    });
+  }
+
+  if (textColor && textColorText) {
+    textColor.addEventListener("input", (e) => {
+      textColorText.value = e.target.value.toUpperCase();
+    });
+
+    textColorText.addEventListener("click", () => {
+      textColor.click();
+    });
+  }
 }
 
 // Mise à jour de l'affichage de la taille de police
@@ -177,6 +230,12 @@ function displayCountdowns() {
           <strong>Date cible:</strong> ${targetDate.toLocaleString("fr-FR")}
         </div>
         <div class="countdown-actions">
+          <button class="btn btn-secondary btn-small" onclick="showEditModal('${
+            countdown.id
+          }')">
+            <i data-lucide="edit"></i>
+            <span>Modifier</span>
+          </button>
           <button class="btn btn-secondary btn-small" onclick="showIntegrationModal('${
             countdown.id
           }')">
@@ -241,20 +300,123 @@ window.closeModal = function () {
   modal.style.display = "none";
 };
 
+// Afficher la modal d'édition
+window.showEditModal = function (countdownId) {
+  const countdown = countdowns.find((c) => c.id === countdownId);
+  if (!countdown) return;
+
+  // Remplir le formulaire avec les données actuelles
+  document.getElementById("editCountdownId").value = countdown.id;
+  document.getElementById("editTitle").value = countdown.title || "";
+
+  // Format date pour datetime-local (YYYY-MM-DDTHH:mm)
+  const targetDate = new Date(countdown.targetDate);
+  const year = targetDate.getFullYear();
+  const month = String(targetDate.getMonth() + 1).padStart(2, "0");
+  const day = String(targetDate.getDate()).padStart(2, "0");
+  const hours = String(targetDate.getHours()).padStart(2, "0");
+  const minutes = String(targetDate.getMinutes()).padStart(2, "0");
+  document.getElementById("editTargetDate").value = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+  // Couleurs
+  document.getElementById("editBackgroundColor").value =
+    countdown.style.backgroundColor || "#ffffff";
+  document.getElementById("editBackgroundColorText").value =
+    (countdown.style.backgroundColor || "#ffffff").toUpperCase();
+
+  document.getElementById("editTextColor").value =
+    countdown.style.textColor || "#000000";
+  document.getElementById("editTextColorText").value =
+    (countdown.style.textColor || "#000000").toUpperCase();
+
+  // Taille de police
+  const fontSize = countdown.style.fontSize || 48;
+  document.getElementById("editFontSize").value = fontSize;
+  document.getElementById("editFontSizeValue").textContent = `${fontSize}px`;
+
+  // Afficher la modal
+  const modal = document.getElementById("editModal");
+  modal.style.display = "block";
+
+  // Réinitialiser les icônes Lucide
+  lucide.createIcons();
+};
+
+// Fermer la modal d'édition
+window.closeEditModal = function () {
+  const modal = document.getElementById("editModal");
+  modal.style.display = "none";
+};
+
+// Mettre à jour un compte à rebours
+async function updateCountdown() {
+  const id = document.getElementById("editCountdownId").value;
+  const title = document.getElementById("editTitle").value.trim();
+  const targetDate = document.getElementById("editTargetDate").value;
+  const backgroundColor = document.getElementById("editBackgroundColor").value;
+  const textColor = document.getElementById("editTextColor").value;
+  const fontSize = parseInt(document.getElementById("editFontSize").value);
+
+  if (!targetDate) {
+    alert("Veuillez sélectionner une date cible");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/countdowns/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        targetDate,
+        style: {
+          backgroundColor,
+          textColor,
+          fontSize,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await parseJSONResponse(response);
+      throw new Error(error.error || "Erreur lors de la modification");
+    }
+
+    await loadCountdowns();
+    closeEditModal();
+
+    // Réinitialiser les icônes après le chargement
+    lucide.createIcons();
+  } catch (error) {
+    alert(`Erreur: ${error.message}`);
+  }
+}
+
 // Configuration de la modal
 function setupModal() {
   const modal = document.getElementById("modal");
+  const editModal = document.getElementById("editModal");
 
   window.onclick = (event) => {
     if (event.target === modal) {
       modal.style.display = "none";
     }
+    if (event.target === editModal) {
+      editModal.style.display = "none";
+    }
   };
 
   // Fermer avec la touche Escape
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && modal.style.display === "block") {
-      modal.style.display = "none";
+    if (event.key === "Escape") {
+      if (modal && modal.style.display === "block") {
+        modal.style.display = "none";
+      }
+      if (editModal && editModal.style.display === "block") {
+        editModal.style.display = "none";
+      }
     }
   });
 }

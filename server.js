@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
 app.use(express.static(join(__dirname, "public")));
 
 const countdownStore = new CountdownStore();
@@ -95,6 +96,77 @@ app.get("/api/countdowns/:id", (req, res) => {
     return res.status(404).json({ error: "Compte à rebours introuvable" });
   }
   res.json(countdown);
+});
+
+// API : Mettre à jour un compte à rebours
+app.put("/api/countdowns/:id", (req, res) => {
+  try {
+    const { title, targetDate, style = {} } = req.body;
+    const countdown = countdownStore.get(req.params.id);
+
+    if (!countdown) {
+      return res.status(404).json({ error: "Compte à rebours introuvable" });
+    }
+
+    // Validation de la date si fournie
+    if (targetDate) {
+      const date = new Date(targetDate);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ error: "Date invalide" });
+      }
+      if (date < new Date()) {
+        return res.status(400).json({ error: "La date doit être dans le futur" });
+      }
+    }
+
+    // Validation du titre si fourni
+    if (title !== undefined && title !== null) {
+      if (title.length > 200) {
+        return res
+          .status(400)
+          .json({ error: "Titre trop long (max 200 caractères)" });
+      }
+    }
+
+    // Validation des couleurs hex si fournies
+    const updateData = { title, targetDate, style: {} };
+
+    if (style.backgroundColor !== undefined) {
+      const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
+      updateData.style.backgroundColor = hexColorRegex.test(style.backgroundColor)
+        ? style.backgroundColor
+        : countdown.style.backgroundColor;
+    }
+
+    if (style.textColor !== undefined) {
+      const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
+      updateData.style.textColor = hexColorRegex.test(style.textColor)
+        ? style.textColor
+        : countdown.style.textColor;
+    }
+
+    if (style.fontSize !== undefined) {
+      updateData.style.fontSize =
+        typeof style.fontSize === "number" &&
+        style.fontSize >= 12 &&
+        style.fontSize <= 120
+          ? style.fontSize
+          : countdown.style.fontSize;
+    }
+
+    if (style.fontFamily !== undefined) {
+      updateData.style.fontFamily = style.fontFamily || countdown.style.fontFamily;
+    }
+
+    const updated = countdownStore.update(req.params.id, updateData);
+    if (!updated) {
+      return res.status(404).json({ error: "Compte à rebours introuvable" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
 // API : Supprimer un compte à rebours

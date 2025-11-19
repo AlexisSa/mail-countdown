@@ -69,6 +69,29 @@ export class CountdownStore {
     return [...this.countdowns];
   }
 
+  update(id, data) {
+    const index = this.countdowns.findIndex((c) => c.id === id);
+    if (index === -1) {
+      return null;
+    }
+
+    const countdown = this.countdowns[index];
+    const updated = {
+      ...countdown,
+      title: data.title !== undefined ? data.title : countdown.title,
+      targetDate: data.targetDate ? new Date(data.targetDate) : countdown.targetDate,
+      style: {
+        ...countdown.style,
+        ...data.style,
+      },
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.countdowns[index] = updated;
+    this.save();
+    return updated;
+  }
+
   delete(id) {
     const index = this.countdowns.findIndex((c) => c.id === id);
     if (index === -1) {

@@ -643,6 +643,16 @@ form {
   border: 1px solid var(--border);
 }
 
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--bg-tertiary);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

@@ -39,23 +39,23 @@ function generateCountdownSVG(countdown, days, hours, minutes, seconds) {
         <text 
           x="${x}" 
           y="${valueY}" 
-          font-family="Arial, sans-serif" 
+          font-family="Arial, Helvetica, sans-serif" 
           font-size="${fontSize}" 
           font-weight="bold" 
           fill="${textColor}" 
           text-anchor="middle" 
           dominant-baseline="alphabetic"
-        >${formattedValue}</text>
+        >${escapeSVG(formattedValue)}</text>
         <text 
           x="${x}" 
           y="${labelY}" 
-          font-family="Arial, sans-serif" 
+          font-family="Arial, Helvetica, sans-serif" 
           font-size="${labelFontSize}" 
           font-weight="normal" 
           fill="${textColor}" 
           text-anchor="middle" 
           dominant-baseline="alphabetic"
-        >${block.label}</text>
+        >${escapeSVG(block.label)}</text>
       `;
     })
     .join("");
@@ -73,7 +73,7 @@ function generateCountdownSVG(countdown, days, hours, minutes, seconds) {
        >${escapeSVG(countdown.title.toUpperCase())}</text>`
     : "";
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <rect width="${width}" height="${height}" fill="${bgColor}"/>
   ${titleHTML}
@@ -103,7 +103,7 @@ function generateExpiredSVG(countdown) {
        >${escapeSVG(countdown.title.toUpperCase())}</text>`
     : "";
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
   <rect width="${width}" height="${height}" fill="${bgColor}"/>
   ${titleHTML}
@@ -153,18 +153,14 @@ export async function createCountdownImage(countdown) {
   const seconds = differenceInSeconds(remainingAfterMinutes, now);
 
   const svg = generateCountdownSVG(countdown, days, hours, minutes, seconds);
-  const pngBuffer = await sharp(Buffer.from(svg))
-    .png()
-    .toBuffer();
+  const pngBuffer = await sharp(Buffer.from(svg, "utf-8")).png().toBuffer();
 
   return pngBuffer;
 }
 
 async function createExpiredImage(countdown) {
   const svg = generateExpiredSVG(countdown);
-  const pngBuffer = await sharp(Buffer.from(svg))
-    .png()
-    .toBuffer();
+  const pngBuffer = await sharp(Buffer.from(svg, "utf-8")).png().toBuffer();
 
   return pngBuffer;
 }
